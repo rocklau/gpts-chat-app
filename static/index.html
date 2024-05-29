@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GPTs Chat</title>
+        <style>
+            .flex-container {
+                display: flex;
+                justify-content: center;
+                align-items: flex-end;
+            }
+
+            #gptForm {
+                display: flex;
+                justify-content: center;
+            }
+
+            .flex-item {
+                flex: 1;
+
+                background-color: #f0f0f0;
+                margin: 5px;
+                padding: 10px;
+                text-align: left;
+            }
+
+            textarea,
+            button {
+                padding: 15px;
+                border: 2px solid #ccc;
+                border-radius: 8px;
+                font-size: 18px;
+                outline: none;
+                width: 300px;
+            }
+        </style>
+        <script src="./static/htmx.min.js"></script>
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="./static/cherry-markdown.css"
+        />
+    </head>
+
+    <body>
+        <div hx-get="/init" hx-trigger="load">loading</div>
+    </body>
+    <script src="./static/echarts.min.js"></script>
+    <script src="./static/cherry-markdown.js"></script>
+    <script>
+        let models = [];
+        let chat_count = 0;
+
+        document.body.addEventListener("htmx:afterRequest", function (event) {
+            if (event.target.id === "chatForm") {
+                document.getElementById("chatForm").reset();
+            }
+            if (event.target.id === "gptForm") {
+                let newSendDiv = document.createElement("textarea");
+
+                newSendDiv.id = "send_" + chat_count;
+                newSendDiv.readOnly = true;
+                newSendDiv.style =
+                    "cursor: pointer; flex: 0 1 20%;  margin: 10px; box-sizing: border-box; ";
+                newSendDiv.value = document.getElementById("msg").value;
+                newSendDiv.onclick = function (event) {
+                    document.getElementById("msg").value = event.target.value;
+                };
+
+                document.getElementById("send_div").appendChild(newSendDiv);
+
+                chat_count++;
+
+                waitSSE();
+                document.getElementById("gptForm").reset();
+            }
+        });
+
+        let cherry_box = {};
+        let say_all = {};
+        let gpt_model_count = 0;
+        function gpt_ask(model, query) {
+            if (say_all[model] == undefined) say_all[model] = [];
+
+            if (cherry_box[model + "_" + chat_count] === undefined) {
+                gpt_model_count++;
+                let ele_model = document.getElementById(model);
+                let newDiv_u = document.createElement("div");
+
+                newDiv_u.id = "user_" + model + "_" + chat_count;
+                newDiv_u.innerText = decodeURIComponent(atob(query));
+
+                let newDiv = document.createElement("div");
+
+                newDiv.id = "gpt_" + model + "_" + chat_count;
+
+                ele_model.appendChild(newDiv_u);
+                ele_model.appendChild(newDiv);
+
+                var cherryConfig = {
+                    id: newDiv.id,
+                    externals: {
+                        echarts: window.echarts,
+                    },
+                    toolbars: {
+                        toolbar: false,
+                    },
+                    editor: {
+                        defaultModel: "previewOnly",
+                    },
+                };
+
+                var cherry = new Cherry(cherryConfig);
+                cherry_box[model + "_" + chat_count] = cherry;
+            }
+        }
+        function gpt_say_word(model, msg) {
+            console.log(msg);
+            if (msg == "") return;
+
+            if (say_all[model] == undefined) say_all[model] = [];
+
+            say_all[model].push(decodeURIComponent(atob(msg)));
+
+            if (say_all[model].length > 10) {
+                console.log(cherry_box[model + "_" + chat_count]);
+                cherry_box[model + "_" + chat_count].insert(
+                    say_all[model].join(""),
+                );
+                say_all[model].length = 0;
+            }
+        }
+        function gpt_say_end(model) {
+            console.log(model);
+            if (say_all[model].length > 0) {
+                cherry_box[model + "_" + chat_count].insert(
+                    say_all[model].join(""),
+                );
+                say_all[model].length = 0;
+            }
+            cherry_box[model + "_" + chat_count].insert("\n\n---\n\n");
+            gpt_model_count--;
+            if (gpt_model_count === 0) {
+                setTimeout(function () {
+                    scrollToBottomOfAllElements();
+                }, 100);
+                setTimeout(function () {
+                    window.scrollTo(0, document.body.scrollHeight);
+                    document.getElementById("msg").focus();
+                }, 300);
+            }
+        }
+
+        function waitSSE() {
+            let myname = htmx.find("#myname").value;
+
+            
+            const eventSource = new EventSource(
+                "http://localhost:3000/sse?myname=" + myname,
+                { withCredentials: false },
+            );
+        
+            eventSource.addEventListener("gpt", function (event) {
+               
+                console.log("Received custom event:", event.data);
+                eval(event.data);
+            });
+            eventSource.onmessage = function (event) {
+                 
+                console.log("Received a new event:", event.data);
+            };
+            eventSource.onerror = function (error) {
+                
+                console.error("EventSource failed:", error);
+                eventSource.close();  
+            };
+           
+            window.addEventListener("beforeunload", () => {
+                eventSource.close();
+            });
+        }
+
+        function scrollToBottomOfAllElements() {
+          
+            var scrollableElements = document.querySelectorAll(".cherry");
+
+            
+            scrollableElements.forEach(function (element) {
+                 
+                if (element.scrollHeight > element.clientHeight) {
+                  
+                    element.scrollTop = element.scrollHeight;
+                }
+            });
+        }
+    </script>
+</html>
