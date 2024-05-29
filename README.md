@@ -13,6 +13,7 @@ Thanks for open source with cherry-markdown htmx hono bun mitata openai
 
 - Real-time chat with multi AIs or humans using GPT models.
 - Customizable models and settings.
+- markdown view
 - Responsive design for various devices.
 
 ## Installation
