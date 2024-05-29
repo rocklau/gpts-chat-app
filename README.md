@@ -1,6 +1,6 @@
 
 
-# GPTs Chat App 
+# GPTs Chat App
 
 ## Overview
 
@@ -32,8 +32,14 @@ To run the application, execute:
 bun run dev
 ```
 
+
+
 Open your browser and navigate to `http://localhost:3000` to start chatting.
 
+To test gpt models
+```sh
+bun run src/benmarking.tsx
+```
 ## Configuration
 
 Modify the models API in `src/api/models.ts` to customize the AI behavior.
@@ -43,13 +49,13 @@ Modify the models API in `src/api/models.ts` to customize the AI behavior.
 The project directory is organized as follows:
 - [static/](./static):
   - [index.html](./static/index.html): Main HTML file for the application. have   htmx and js logic.
-- [src/](./src):  
+- [src/](./src):
   - [index.tsx](./src/index.tsx): Entry point of the application, core server logic.
   - [GptChat.tsx](./src/GptChat.tsx): Component for the GPT chat interface.
   - [models.tsx](./src/models.tsx): Configuration for the AI models.
   - [benmarking.tsx](./src/benmarking.tsx): Benchmarking scripts for performance testing gpt models.
   - [HumanChat.tsx](./src/HumanChat.tsx): Component for human-to-human chat interface. have bug
- 
+
 
 This structure ensures a clear separation of concerns and easy navigation through the project files.
 
